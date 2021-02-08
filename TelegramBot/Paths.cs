@@ -2,7 +2,7 @@
 {
     class Paths
     {
-        //p - path, t - UTF, u - URL, r - rasp, a - promA
+        //p - local paths, t - UTF, u - URL
         public static string uTTVuz = "http://tt.penzgtu.ru/";
         public static string uVuz = "http://www.penzgtu.ru/";
         public static string scrRaspPromA = @"Data\RaspAndPromA\";
