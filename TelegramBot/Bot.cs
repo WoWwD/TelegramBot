@@ -9,6 +9,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBot.All_Paths;
 using TelegramBot.NewsOfVuz;
 using TelegramBot.Schedule_of_groups;
 
@@ -73,8 +74,8 @@ namespace TelegramBot
                         {
                             await bot.SendTextMessageAsync(upm.Chat.Id, text: "Список доступных команд:\n\n" +
                                 $"{char.ConvertFromUtf32(0x1F4DA)}  /r[группа] - Расписание вашей группы\n\n" +
-                                $"{char.ConvertFromUtf32(0x1F3EB)}  /site - Сайт ПензГТУ\n\n" +
-                                $"{char.ConvertFromUtf32(0x1F4F0)}  /newsOfWeek - Получить новости за текущую неделю\n\n", replyMarkup: GetReplyButtonsMenu());
+                                $"{char.ConvertFromUtf32(0x1F4F0)}  /newsOfWeek - Получить новости за текущую неделю\n\n" +
+                                $"{char.ConvertFromUtf32(0x1F3EB)}  /links - Ссылки на социальные сети ПензГТУ\n\n", replyMarkup: GetReplyButtonsMenu());
                             break;
                         }
                         if (msg.Contains("/r"))
@@ -111,19 +112,28 @@ namespace TelegramBot
                                 break;
                             }
                         }
-                        if (msg.Contains("/site"))
+                        if (msg.Contains("/links"))
                         {
                             var inlineKeyboard = new InlineKeyboardMarkup(new[]
                             {
                         new[]
                         {
-                             InlineKeyboardButton.WithUrl("Сайт ПензГТУ", "http://www.penzgtu.ru/")
+                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x1F535)}  VK", Paths.uVkVuz)
+                        },
+                        new[]
+                        {
+                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x26AB)}  Instagram", Paths.uInstVuz)
+                        },
+                        new[]
+                        {
+                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x26AA)}  Facebook", Paths.uFacebookVuz)
+                        },
+                        new[]
+                        {
+                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x1F534)}  YouTube", Paths.uYouTubeVuz)
                         }
                         });
-                            using (var stream1 = System.IO.File.OpenRead(Paths.pvuzPhoto))
-                            {
-                                var a = bot.SendPhotoAsync(update.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(stream1), replyMarkup: inlineKeyboard).Result;
-                            }
+                            var a = bot.SendTextMessageAsync(update.Message.Chat.Id, "Социальные сети", replyMarkup: inlineKeyboard).Result;
                             break;
                         }
                         if (msg.Contains("/newsOfWeek"))
@@ -165,6 +175,7 @@ namespace TelegramBot
                     var res = n.GetNews();
                     if (res == true)
                     {
+                        n.news.Reverse();
                         bot.SendTextMessageAsync(update.Message.Chat.Id, text: $"{char.ConvertFromUtf32(0x2757)}<b>Новости недели</b>{char.ConvertFromUtf32(0x2757)}\n\n{string.Join("\n\n", n.news)}", ParseMode.Html, disableWebPagePreview: true);
                     }
                     else

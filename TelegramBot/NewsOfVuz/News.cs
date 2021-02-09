@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TelegramBot.All_Paths;
 
 namespace TelegramBot.NewsOfVuz
 {
@@ -10,8 +11,8 @@ namespace TelegramBot.NewsOfVuz
         public List<string> news = new List<string>();
         public bool GetNews()
         {
-            string urlFrm, nameEvent, DayMonthYearInPars, result;
-            int countWeek = (int)DateTime.Now.DayOfWeek, today = DateTime.Now.Day, dayInPars;
+            string urlFrm, nameNews, DayMonthYearInPars, result;
+            int countWeek = (int)DateTime.Now.DayOfWeek, today = DateTime.Now.Day, dayInPars, firstWord, endWord;
             if (countWeek == 0)
             {
                 countWeek = 6;
@@ -19,22 +20,22 @@ namespace TelegramBot.NewsOfVuz
             int startDayOfWeek = today - countWeek;
             HtmlWeb aa = new HtmlWeb();
             aa.OverrideEncoding = Encoding.UTF8;
-            HtmlDocument v = aa.Load(Paths.uEvents);
-            foreach (HtmlNode s in v.DocumentNode.SelectNodes(".//div[contains(@id, 'middle')]/table/tr/td[contains(@id, 'col2')]//div[contains(@id, 'c7687')]//div[contains(@class, 'news_list_wrapper')]/table/tr/td"))
+            HtmlDocument n = aa.Load(Paths.uEvents);
+            foreach (HtmlNode s in n.DocumentNode.SelectNodes(Paths.tForParsNews))
             {
-                int start = s.OuterHtml.ToString().IndexOf("<span>");
-                int end = s.OuterHtml.ToString().IndexOf("</span>", start);
-                dayInPars = Convert.ToInt32(s.OuterHtml.ToString().Substring(start, end - start + "<span>".Length).Split('>')[1].Split('&')[0].Replace(" ", ""));
-                DayMonthYearInPars = s.OuterHtml.ToString().Substring(start, end - start + "<span>".Length).Split('>')[1].Split('<')[0].Replace("&nbsp;", " ");
+                firstWord = s.OuterHtml.IndexOf("<span>");
+                endWord = s.OuterHtml.IndexOf("</span>", firstWord);
+                dayInPars = Convert.ToInt32(s.OuterHtml.Substring(firstWord, endWord - firstWord + "<span>".Length).Split('>')[1].Split('&')[0].Replace(" ", ""));
+                DayMonthYearInPars = s.OuterHtml.Substring(firstWord, endWord - firstWord + "<span>".Length).Split('>')[1].Split('<')[0].Replace("&nbsp;", " ");
                 if (dayInPars >= startDayOfWeek && dayInPars <= today)
                 {
-                    start = s.OuterHtml.ToString().IndexOf("title");
-                    end = s.OuterHtml.ToString().IndexOf("</a>", start);
-                    nameEvent = s.OuterHtml.ToString().Substring(start, end - start + "<title>".Length).Split('\"')[1].Split('\"')[0];
-                    start = s.OuterHtml.ToString().IndexOf("href");
-                    end = s.OuterHtml.ToString().IndexOf("title", start);
-                    urlFrm = s.OuterHtml.ToString().Substring(start, end - start + "href".Length).Split('\"')[1].Split('\"')[0];
-                    result = $"{nameEvent}\nПодробнее =>{Paths.uVuz}{urlFrm}\nДата публикации: {DayMonthYearInPars} г.";
+                    firstWord = s.OuterHtml.IndexOf("title");
+                    endWord = s.OuterHtml.IndexOf("</a>", firstWord);
+                    nameNews = s.OuterHtml.Substring(firstWord, endWord - firstWord + "<title>".Length).Split('\"')[1].Split('\"')[0];
+                    firstWord = s.OuterHtml.IndexOf("href");
+                    endWord = s.OuterHtml.IndexOf("title", firstWord);
+                    urlFrm = s.OuterHtml.Substring(firstWord, endWord - firstWord + "href".Length).Split('\"')[1].Split('\"')[0];
+                    result = $"{nameNews}\nПодробнее =>{Paths.uVuz}{urlFrm}\nОпубликовано {DayMonthYearInPars} г.";
                     news.Add(result);
                 }
             }

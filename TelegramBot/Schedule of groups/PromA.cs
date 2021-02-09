@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Telegram.Bot.Types;
+using TelegramBot.All_Paths;
 
 namespace TelegramBot.Schedule_of_groups
 {
@@ -15,55 +16,51 @@ namespace TelegramBot.Schedule_of_groups
         public static string linkGroupPromA;
         public bool GetPromA(Update update)
         {
-            string urlFrm;
+            string url, nameGroup, potok, yearInStr;
+            var msg = update.Message.Text;
             HtmlWeb aa = new HtmlWeb();
             aa.OverrideEncoding = Encoding.UTF8;
             HtmlDocument v = aa.Load(Paths.ulevelHigh);
             foreach (HtmlNode s in v.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
             {
-                urlFrm = s.OuterHtml.ToString().Split('=').Last().Split('>')[0];
-                urlFrm = Paths.uTTVuz + urlFrm.Substring(2, urlFrm.Length - 4) + "";
-                FormsOfEducationPromA.Add(urlFrm);
+                url = s.OuterHtml.Split('=').Last().Split('>')[0];
+                url= Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
+                FormsOfEducationPromA.Add(url);
             }
             HtmlDocument m = aa.Load(Paths.ulevelMid);
             foreach (HtmlNode s in m.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
             {
-                urlFrm = s.OuterHtml.ToString().Split('=').Last().Split('>')[0];
-                urlFrm = Paths.uTTVuz + urlFrm.Substring(2, urlFrm.Length - 4) + "";
-                FormsOfEducationPromA.Add(urlFrm);
+                url = s.OuterHtml.Split('=').Last().Split('>')[0];
+                url = Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
+                FormsOfEducationPromA.Add(url);
             }
-            var msg = update.Message.Text;
-            string url, nameGroup;
-            int potok, yearInStr;
-            HtmlWeb html = new HtmlWeb();
-            html.OverrideEncoding = Encoding.UTF8;
             for (int i = 0; i < FormsOfEducationPromA.Count; i++)
             {
-                HtmlDocument formOfEducation = html.Load(FormsOfEducationPromA[i].ToString());
-                foreach (HtmlNode li1 in formOfEducation.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
+                HtmlDocument formOfEducation = aa.Load(FormsOfEducationPromA[i].ToString());
+                foreach (HtmlNode p in formOfEducation.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
                 {
-                    if (li1.OuterHtml.Contains("Промежуточная аттестация"))
+                    if (p.OuterHtml.Contains("Промежуточная аттестация"))
                     {
-                        url = li1.OuterHtml.ToString().Split('=').Last().Split('>')[0];
+                        url = p.OuterHtml.ToString().Split('=').Last().Split('>')[0];
                         linkPromA = Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
-                        HtmlDocument pa = html.Load(linkPromA);
+                        HtmlDocument pa = aa.Load(linkPromA);
                         if (pa.DocumentNode.SelectNodes(Paths.tForParsRaspPromA) == null)
                         {
                             break;
                         }
-                        foreach (HtmlNode li2 in pa.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
+                        foreach (HtmlNode c in pa.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
                         {
-                            potok = Convert.ToInt32(li2.OuterHtml.ToString().ToUpper().Split('>')[1].Split('<')[0].Substring(0, 2));
-                            yearInStr = Convert.ToInt32(msg.ToUpper().Split('R')[1].Substring(0, 2));
+                            potok = c.OuterHtml.ToUpper().Split('>')[1].Split('<')[0].Substring(0, 2);
+                            yearInStr = msg.ToUpper().Split('R')[1].Substring(0, 2);
                             if (potok == yearInStr)
                             {
-                                url = li2.OuterHtml.ToString().Split('=').Last().Split('>')[0];
+                                url = c.OuterHtml.Split('=').Last().Split('>')[0];
                                 linkCoursPromA = Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
-                                HtmlDocument courss = html.Load(linkCoursPromA);
-                                foreach (HtmlNode li in courss.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
+                                HtmlDocument cours = aa.Load(linkCoursPromA);
+                                foreach (HtmlNode g in cours.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
                                 {
-                                    nameGroup = li.OuterHtml.ToString().ToUpper().Split('>')[1].Split('<')[0];
-                                    linkGroupPromA = li.OuterHtml.ToString().Split('=').Last().Split('>')[0];
+                                    nameGroup = g.OuterHtml.ToUpper().Split('>')[1].Split('<')[0];
+                                    linkGroupPromA = g.OuterHtml.Split('=').Last().Split('>')[0];
                                     linkGroupPromA = Paths.uTTVuz + linkGroupPromA.Substring(2, linkGroupPromA.Length - 4) + "";
                                     if (nameGroup == msg.ToUpper().Split('R')[1])
                                     {
