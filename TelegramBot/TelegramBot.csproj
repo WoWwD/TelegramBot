@@ -57,7 +57,7 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="NewsOfVuz\News.cs" />
-    <Compile Include="Paths.cs" />
+    <Compile Include="All paths\Paths.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schedule of groups\PromA.cs" />
