@@ -39,7 +39,7 @@ namespace TelegramBot.NewsOfVuz
                     news.Add(result);
                 }
             }
-            if (news.Count > 1)
+            if (news.Count >= 1)
             {
                 return true;
             }
