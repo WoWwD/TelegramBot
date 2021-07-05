@@ -8,32 +8,19 @@ using TelegramBot.All_Paths;
 
 namespace TelegramBot.Schedule_of_groups
 {
-    class PromA: IDisposable
+    class PromA : IDisposable
     {
         private List<string> FormsOfEducationPromA = new List<string>();
-        private string linkPromA;
-        private string linkCoursPromA;
         public static string linkGroupPromA;
         public bool GetPromA(Update update)
         {
-            string url, nameGroup, potok, yearInStr;
             var msg = update.Message.Text;
             HtmlWeb aa = new HtmlWeb();
             aa.OverrideEncoding = Encoding.UTF8;
             HtmlDocument v = aa.Load(Paths.ulevelHigh);
-            foreach (HtmlNode s in v.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
-            {
-                url = s.OuterHtml.Split('=').Last().Split('>')[0];
-                url= Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
-                FormsOfEducationPromA.Add(url);
-            }
+            AddFormsOfEducation(FormsOfEducationPromA, v);
             HtmlDocument m = aa.Load(Paths.ulevelMid);
-            foreach (HtmlNode s in m.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
-            {
-                url = s.OuterHtml.Split('=').Last().Split('>')[0];
-                url = Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
-                FormsOfEducationPromA.Add(url);
-            }
+            AddFormsOfEducation(FormsOfEducationPromA, m);
             for (int i = 0; i < FormsOfEducationPromA.Count; i++)
             {
                 HtmlDocument formOfEducation = aa.Load(FormsOfEducationPromA[i].ToString());
@@ -41,28 +28,22 @@ namespace TelegramBot.Schedule_of_groups
                 {
                     if (p.OuterHtml.Contains("Промежуточная аттестация"))
                     {
-                        url = p.OuterHtml.ToString().Split('=').Last().Split('>')[0];
-                        linkPromA = Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
-                        HtmlDocument pa = aa.Load(linkPromA);
+                        var linkFormOfEducation = GetLinkFormOfEducation(p);
+                        HtmlDocument pa = aa.Load(linkFormOfEducation);
                         if (pa.DocumentNode.SelectNodes(Paths.tForParsRaspPromA) == null)
                         {
                             break;
                         }
                         foreach (HtmlNode c in pa.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
                         {
-                            potok = c.OuterHtml.ToUpper().Split('>')[1].Split('<')[0].Substring(0, 2);
-                            yearInStr = msg.ToUpper().Split('R')[1].Substring(0, 2);
-                            if (potok == yearInStr)
+                            var linkCours = GetLinkCours(c, msg);
+                            if (linkCours != null)
                             {
-                                url = c.OuterHtml.Split('=').Last().Split('>')[0];
-                                linkCoursPromA = Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
-                                HtmlDocument cours = aa.Load(linkCoursPromA);
+                                HtmlDocument cours = aa.Load(linkCours);
                                 foreach (HtmlNode g in cours.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
                                 {
-                                    nameGroup = g.OuterHtml.ToUpper().Split('>')[1].Split('<')[0];
-                                    linkGroupPromA = g.OuterHtml.Split('=').Last().Split('>')[0];
-                                    linkGroupPromA = Paths.uTTVuz + linkGroupPromA.Substring(2, linkGroupPromA.Length - 4) + "";
-                                    if (nameGroup == msg.ToUpper().Split('R')[1])
+                                    linkGroupPromA = GetLinkGroup(g, msg);
+                                    if (linkGroupPromA != null)
                                     {
                                         return true;
                                     }
@@ -90,5 +71,41 @@ namespace TelegramBot.Schedule_of_groups
         {
             GC.Collect();
         }
+        private string GetLinkFormOfEducation(HtmlNode p)
+        {
+            string url = p.OuterHtml.ToString().Split('=').Last().Split('>')[0];
+            return Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
+        }
+        private string GetLinkCours(HtmlNode c, string message)
+        {
+            string potok = c.OuterHtml.ToUpper().Split('>')[1].Split('<')[0].Substring(0, 2);
+            string yearInStr = message.ToUpper().Split('R')[1].Substring(0, 2);
+            if (potok == yearInStr)
+            {
+                string url = c.OuterHtml.Split('=').Last().Split('>')[0];
+                return Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
+            }
+            return null;
+        }
+        private string GetLinkGroup(HtmlNode g, string message)
+        {
+            string nameGroup = g.OuterHtml.ToUpper().Split('>')[1].Split('<')[0];
+            if (nameGroup == message.ToUpper().Split('R')[1])
+            {
+                string link = g.OuterHtml.Split('=').Last().Split('>')[0];
+                return Paths.uTTVuz + link.Substring(2, link.Length - 4) + ""; ;
+            }
+            return null;
+        }
+        private void AddFormsOfEducation(List<string> array, HtmlDocument levelOfEducation)
+        {
+            string url;
+            foreach (HtmlNode s in levelOfEducation.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
+            {
+                url = s.OuterHtml.Split('=').Last().Split('>')[0];
+                url = Paths.uTTVuz + url.Substring(2, url.Length - 4) + "";
+                array.Add(url);
+            }
+        } 
     }
 }
