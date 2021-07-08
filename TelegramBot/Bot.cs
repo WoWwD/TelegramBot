@@ -73,7 +73,7 @@ namespace TelegramBot
                         if (msg.Contains("Команды"))
                         {
                             await bot.SendTextMessageAsync(upm.Chat.Id, text: "Список доступных команд:\n\n" +
-                                $"{char.ConvertFromUtf32(0x1F4DA)}  /r[группа] - Расписание вашей группы\n\n" +
+                                $"{char.ConvertFromUtf32(0x1F4DA)}  /r[группа] - Расписание группы\n\n" +
                                 $"{char.ConvertFromUtf32(0x1F4F0)}  /newsOfWeek - Получить новости за текущую неделю\n\n" +
                                 $"{char.ConvertFromUtf32(0x1F3EB)}  /links - Ссылки на социальные сети ПензГТУ\n\n", replyMarkup: GetReplyButtonsMenu());
                             break;
