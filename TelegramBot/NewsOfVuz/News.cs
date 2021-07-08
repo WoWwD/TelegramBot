@@ -35,7 +35,7 @@ namespace TelegramBot.NewsOfVuz
                     firstWord = s.OuterHtml.IndexOf("href");
                     endWord = s.OuterHtml.IndexOf("title", firstWord);
                     urlFrm = s.OuterHtml.Substring(firstWord, endWord - firstWord + "href".Length).Split('\"')[1].Split('\"')[0];
-                    result = $"{nameNews}\nПодробнее =>{Paths.uVuz}{urlFrm}\nОпубликовано {DayMonthYearInPars} г.";
+                    result = $"{nameNews}\nПодробнее =>{Paths.uVuz}{urlFrm}\nОпубликовано: {DayMonthYearInPars}г.";
                     news.Add(result);
                 }
             }

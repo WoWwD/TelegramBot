@@ -1,7 +1,6 @@
 ﻿using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Telegram.Bot.Types;
@@ -22,9 +21,9 @@ namespace TelegramBot.Schedule_of_groups
             AddFormsOfEducation(FormsOfEducationRasp, v);
             HtmlDocument m = aa.Load(Paths.ulevelMid);
             AddFormsOfEducation(FormsOfEducationRasp, m);
-            for (int i = 0; i < FormsOfEducationRasp.Count; i++) 
+            foreach (var f in FormsOfEducationRasp)
             {
-                HtmlDocument formOfEducation = aa.Load(FormsOfEducationRasp[i].ToString());
+                HtmlDocument formOfEducation = aa.Load(f.ToString());
                 foreach (HtmlNode r in formOfEducation.DocumentNode.SelectNodes(Paths.tForParsRaspPromA))
                 {
                     if (r.OuterHtml.Contains("Расписание занятий") || r.OuterHtml.Contains("Установочная сессия"))

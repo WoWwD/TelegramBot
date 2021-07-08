@@ -1,7 +1,6 @@
 ﻿using Freezer.Core;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -68,7 +67,7 @@ namespace TelegramBot
                         if (msg.Contains("/start"))
                         {
                             await bot.SendTextMessageAsync(upm.Chat.Id, text: "Привет!\nЧтобы начать пользоваться ботом, необходимо нажать кнопку \"Команды\", " +
-                                "которая появилась под полем для ввода сообщений. После нажатия кнопки появится меню, в котором можно узнать, что умеет бот.", replyMarkup: GetReplyButtonsMenu());
+                                "которая появилась под полем для ввода сообщений.", replyMarkup: GetReplyButtonsMenu());
                             break;
                         }
                         if (msg.Contains("Команды"))
@@ -109,7 +108,7 @@ namespace TelegramBot
                             }
                             if (rasp.Result == false && promA.Result == false)
                             {
-                                await bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Расписание занятий недоступно или введённой группы не существует");
+                                await bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Расписание занятий и промежуточной аттестации недоступно или введённой группы не существует");
                                 break;
                             }
                         }
