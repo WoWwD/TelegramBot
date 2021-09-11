@@ -78,7 +78,7 @@ namespace TelegramBot.Schedule_of_groups
         }
         private string GetLinkCours(HtmlNode c, string message)
         {
-            int NowYear = DateTime.Now.Year - 2000;
+            int NowYear = DateTime.Now.Year - 1999;
             int coursPars = Convert.ToInt32(c.OuterHtml.ToUpper().Split('>')[1].Split('<')[0].Substring(0, 1));
             int coursInMessage = Convert.ToInt32(message.ToUpper().Split('R')[1].Substring(0, 2));
             if ((NowYear - coursInMessage) == coursPars)
