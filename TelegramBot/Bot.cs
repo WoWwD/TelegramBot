@@ -62,7 +62,7 @@ namespace TelegramBot
                 {
                     case UpdateType.Message:
                         string message = $"{DateTime.Now}:  {upm.Chat.FirstName}  {upm.Chat.Id}  Message: {msg}";
-                        System.IO.File.AppendAllText(@"Data\messages.txt", $"{message}\n");
+                        //System.IO.File.AppendAllText(@"Data\messages.txt", $"{message}\n");
                         Console.WriteLine(message);
                         if (msg.Contains("/start"))
                         {
@@ -193,8 +193,8 @@ namespace TelegramBot
                 {
                     Guid guid = Guid.NewGuid();
                     var screenshotJob1 = ScreenshotJobBuilder.Create(Rasp.linkGroupRasp).SetBrowserSize(1280, 900).SetCaptureZone(CaptureZone.FullPage).SetTrigger(new WindowLoadTrigger());
-                    System.IO.File.WriteAllBytes($"{Paths.scrRaspPromA}" + $"{guid}Rasp.png", screenshotJob1.Freeze());
-                    string[] findFiles = Directory.GetFiles(Paths.scrRaspPromA, $"{guid}Rasp.png", SearchOption.AllDirectories);
+                    System.IO.File.WriteAllBytes($"{guid}Rasp.png", screenshotJob1.Freeze());
+                    string[] findFiles = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, $"{guid}Rasp.png", SearchOption.AllDirectories);
                     foreach (string file in findFiles)
                     {
                         var q = file;
@@ -221,8 +221,8 @@ namespace TelegramBot
                 {
                     Guid guid = Guid.NewGuid();
                     var screenshotJob2 = ScreenshotJobBuilder.Create(PromA.linkGroupPromA).SetBrowserSize(1100, 900).SetCaptureZone(CaptureZone.FullPage).SetTrigger(new WindowLoadTrigger());
-                    System.IO.File.WriteAllBytes($"{Paths.scrRaspPromA}" + $"{guid}PromA.png", screenshotJob2.Freeze());
-                    string[] findFiles = Directory.GetFiles(Paths.scrRaspPromA, $"{guid}PromA.png", SearchOption.AllDirectories);
+                    System.IO.File.WriteAllBytes($"{guid}PromA.png", screenshotJob2.Freeze());
+                    string[] findFiles = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, $"{guid}PromA.png", SearchOption.AllDirectories);
                     foreach (string file in findFiles)
                     {
                         var q = file;
