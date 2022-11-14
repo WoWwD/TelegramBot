@@ -1,5 +1,4 @@
-﻿using Freezer.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,29 +7,48 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
-using TelegramBot.All_Paths;
 using TelegramBot.NewsOfVuz;
-using TelegramBot.Schedule_of_groups;
+using TelegramBot.Parsers;
+using TelegramBot.Services;
 using TelegramBot.UI;
 
 namespace TelegramBot
 {
     class Bot
     {
-        Buttons buttons = new Buttons();
+        Buttons buttons;
+        TimeTableParser timeTableParser;
+        ExamTimeTableParser examTimeTableParser;
+        NewsParser newsParser;
+        Texts texts;
+        ScreenshotService screenshotService;
         static TelegramBotClient bot;
-        private string Token;
-        public Bot(string Token)
+        private string token;
+
+        public Bot(
+            string token, 
+            Buttons buttons, 
+            TimeTableParser timeTableParser, 
+            ExamTimeTableParser examTimeTableParser, 
+            NewsParser newsParser, 
+            Texts texts, 
+            ScreenshotService screenshotService
+        )
         {
-            this.Token = Token;
+            this.token = token;
+            this.buttons = buttons;
+            this.timeTableParser = timeTableParser;
+            this.examTimeTableParser = examTimeTableParser;
+            this.newsParser = newsParser;
+            this.texts = texts;
+            this.screenshotService = screenshotService;
         }
         public void GetUpdates()
         {
             try
             {
                 int offset = 0;
-                bot = new TelegramBotClient(Token);
+                bot = new TelegramBotClient(token);
                 var me = bot.GetMeAsync().Result;
                 if (me != null && !string.IsNullOrEmpty(me.Username))
                 {
@@ -45,7 +63,7 @@ namespace TelegramBot
                                 offset = update.Id + 1;
                             }
                         }
-                        Thread.Sleep(500); //Время ответа бота
+                        Thread.Sleep(300); //Время ответа бота
                     }
                 }
             }
@@ -56,146 +74,133 @@ namespace TelegramBot
             try
             {
                 if (update.Message == null) return;
-                var msg = update.Message.Text;
-                var upm = update.Message;
+                var message = update.Message.Text;
+                string firstName = update.Message.Chat.FirstName;
+                long chatId = update.Message.Chat.Id;
                 switch (update.Type)
                 {
                     case UpdateType.Message:
-                        string message = $"{DateTime.Now}:  {upm.Chat.FirstName}  {upm.Chat.Id}  Message: {msg}";
-                        //System.IO.File.AppendAllText(@"Data\messages.txt", $"{message}\n");
-                        Console.WriteLine(message);
-                        if (msg.Contains("/start"))
+                        Console.WriteLine($"{DateTime.Now}:  {firstName}  {chatId}  Message: {message}");
+                        if (message.Contains("/start"))
                         {
-                            await bot.SendTextMessageAsync(upm.Chat.Id, text: "Привет!\nЧтобы начать пользоваться ботом, необходимо нажать кнопку \"Команды\", " +
-                                "которая появилась под полем для ввода сообщений.", replyMarkup: buttons.GetMenuButtons());
+                            await bot.SendTextMessageAsync(
+                                chatId, 
+                                text: Texts.firstLaunch, 
+                                replyMarkup: buttons.GetMenuButtons()
+                            );
                             break;
                         }
-                        if (msg.Contains("Команды"))
+                        if (message.Contains("Команды"))
                         {
-                            await bot.SendTextMessageAsync(upm.Chat.Id, text: "Список доступных команд:\n\n" +
-                                $"{char.ConvertFromUtf32(0x1F4DA)}  /r[группа] - Расписание группы\n\n" +
-                                $"{char.ConvertFromUtf32(0x1F4F0)}  /newsOfWeek - Получить новости за текущую неделю\n\n" +
-                                $"{char.ConvertFromUtf32(0x1F3EB)}  /links - Ссылки на социальные сети ПензГТУ\n\n", replyMarkup: buttons.GetMenuButtons());
+                            await bot.SendTextMessageAsync(
+                                chatId, 
+                                text: texts.GetMenu(),  
+                                replyMarkup: buttons.GetMenuButtons()
+                            );
                             break;
                         }
-                        if (msg.Contains("/r"))
+                        if (message.Contains("/r"))
                         {
-                            if (msg.Length < 6 || msg.Contains(" "))
+                            if (message.Length < 6 || message.Contains(" "))
                             {
-                                await bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Неверный формат. Пример ввода:\n/r19сн1с");
+                                await bot.SendTextMessageAsync(chatId, text: "Неверный формат. Пример ввода:\n/r19сн1с");
                                 break;
                             }
-                            await bot.SendTextMessageAsync(update.Message.Chat.Id, text: $"{char.ConvertFromUtf32(0x23F3)} Пожалуйста, подождите {char.ConvertFromUtf32(0x23F3)}");
-                            var rasp = GetResRaspAsync(update);
-                            var promA = GetResPromAAsync(update);
-                            if (rasp.Result == true && promA.Result == true)
+                            await bot.SendTextMessageAsync(chatId, text: texts.Loading());
+                            string linkGroupTimeTable = await Task.Run(
+                                () => timeTableParser.GetLinkGroup(message, "Расписание занятий")
+                            );
+                            string linkGroupExamTimeTable = await Task.Run(
+                                () => examTimeTableParser.GetLinkGroup(message, "Промежуточная аттестация")
+                            );
+                            if (linkGroupTimeTable != null && linkGroupExamTimeTable != null)
                             {
-                                GetScrRaspAsync(update);
-                                GetScrPromAAsync(update);
+                                await GetScreenshotTimeTableAsync(chatId, linkGroupTimeTable);
+                                await GetScreenshotExamTimeTableAsync(chatId, linkGroupExamTimeTable);
                                 break;
                             }
-                            if (rasp.Result == true && promA.Result == false)
+                            if (linkGroupTimeTable != null && linkGroupExamTimeTable == null)
                             {
-                                GetScrRaspAsync(update);
-                                await bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Расписание промежуточной аттестации недоступно");
+                                await GetScreenshotTimeTableAsync(chatId, linkGroupTimeTable);
+                                await bot.SendTextMessageAsync(
+                                    chatId, 
+                                    text: "Расписание промежуточной аттестации недоступно"
+                                );
                                 break;
                             }
-                            if (rasp.Result == false && promA.Result == true)
+                            if (linkGroupTimeTable == null && linkGroupExamTimeTable != null)
                             {
-                                GetScrPromAAsync(update);
-                                await bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Расписание занятий недоступно");
+                                await GetScreenshotExamTimeTableAsync(chatId, linkGroupExamTimeTable);
+                                await bot.SendTextMessageAsync(chatId, text: "Расписание занятий недоступно");
                                 break;
                             }
-                            if (rasp.Result == false && promA.Result == false)
+                            if (linkGroupTimeTable == null && linkGroupExamTimeTable == null)
                             {
-                                await bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Расписание занятий и промежуточной аттестации недоступно или введённой группы не существует");
+                                await bot.SendTextMessageAsync(
+                                    chatId, 
+                                    text: "Расписание  недоступно или введённой группы не существует"
+                                );
                                 break;
                             }
                         }
-                        if (msg.Contains("/links"))
+                        if (message.Contains("/links"))
                         {
-                            var inlineKeyboard = new InlineKeyboardMarkup(new[]
-                            {
-                        new[]
-                        {
-                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x1F535)}  VK", Constants.vkontakteUrl)
-                        },
-                        new[]
-                        {
-                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x26AB)}  Instagram", Constants.instagramUrl)
-                        },
-                        new[]
-                        {
-                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x26AA)}  Facebook", Constants.facebookUrl)
-                        },
-                        new[]
-                        {
-                             InlineKeyboardButton.WithUrl($"{char.ConvertFromUtf32(0x1F534)}  YouTube", Constants.youtubeUrl)
-                        }
-                        });
-                            var a = bot.SendTextMessageAsync(update.Message.Chat.Id, "Социальные сети", replyMarkup: inlineKeyboard).Result;
+                            Message a = bot.SendTextMessageAsync(
+                                chatId, 
+                                "Социальные сети", 
+                                replyMarkup: buttons.GetSocialNetworksButtons()
+                            ).Result;
                             break;
                         }
-                        if (msg.Contains("/newsOfWeek"))
+                        if (message.Contains("/newsOfWeek"))
                         {
-                            GetResEventsAsync(update);
+                            await bot.SendTextMessageAsync(chatId, text: texts.Loading());
+                            await GetNewsAsync(chatId);
                             break;
                         }
                         goto default;
                     default:
-                        await bot.SendTextMessageAsync(upm.Chat.Id, text: "Такой команды я не знаю :(");
+                        await bot.SendTextMessageAsync(chatId, text: "Такой команды я не знаю :(");
                         break;
                 }
             }
-            catch (Exception ex) { Console.WriteLine(ex.Message); await bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Что-то пошло не так, повторите ввод снова"); }
-        }
-        public static async Task<bool> GetResRaspAsync(Update update)
-        {
-            var rasp = await Task.Run(() => TimeTableParser.GetResRasp(update));
-            return rasp;
-        }
-        public static async Task<bool> GetResPromAAsync(Update update)
-        {
-            var promA = await Task.Run(() => ExamTimeTableParser.GetResPromA(update));
-            return promA;
-        }
-        public static async Task GetResEventsAsync(Update update)
-        {
-          await Task.Run(() => {
-            NewsParser n = new NewsParser();
-            var res = n.GetNews();
-            if (res == true)
-            {
-                n.news.Reverse();
-                bot.SendTextMessageAsync(update.Message.Chat.Id, text: $"{char.ConvertFromUtf32(0x2757)}<b>Новости недели</b>{char.ConvertFromUtf32(0x2757)}\n\n{string.Join("\n\n", n.news)}", ParseMode.Html, disableWebPagePreview: true);
+            catch (Exception ex) { 
+                Console.WriteLine(ex.Message); 
+                await bot.SendTextMessageAsync(
+                    update.Message.Chat.Id,
+                    text: "Что-то пошло не так, повторите ввод снова или перезапустите бота"
+                ); 
             }
-            else
-            {
-                bot.SendTextMessageAsync(update.Message.Chat.Id, text: "Новостей за неделю пока нет");
-            }
-          });
         }
-        public static async Task GetScrRaspAsync(Update update)
+        public async Task GetNewsAsync(long chatId)
+        {
+            await Task.Run(() => {
+                List<string> news = newsParser.GetNews();
+                if (news != null)
+                {
+                    news.Reverse();
+                    bot.SendTextMessageAsync(
+                        chatId, 
+                        text: texts.GetNews(news), 
+                        ParseMode.Html, 
+                        disableWebPagePreview: true
+                    );
+                }
+                else bot.SendTextMessageAsync(chatId, text: "Новостей за неделю пока нет");
+            });
+        }
+        public async Task GetScreenshotTimeTableAsync(long chatId, string linkGroup)
         {
             await Task.Run(() =>
             {
                 try
                 {
-                    Guid guid = Guid.NewGuid();
-                    var screenshotJob1 = ScreenshotJobBuilder.Create(TimeTableParser.linkGroup).SetBrowserSize(1280, 900).SetCaptureZone(CaptureZone.FullPage).SetTrigger(new WindowLoadTrigger());
-                    System.IO.File.WriteAllBytes($"{guid}Rasp.png", screenshotJob1.Freeze());
-                    string[] findFiles = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, $"{guid}Rasp.png", SearchOption.AllDirectories);
-                    foreach (string file in findFiles)
-                    {
-                        var q = file;
-                        using (var str1 = System.IO.File.OpenRead(q))
-                        {
-                            var a = bot.SendPhotoAsync(update.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(str1), caption: $"Расписание занятий").Result;
-                            str1.Close();
-                            System.IO.File.Delete(q);
-                            break;
-                        }
-                    }
+                    FileStream screenshot = screenshotService.GetScreenshot(1280, 900, "timeTable", linkGroup);
+                    var a = bot.SendPhotoAsync(
+                        chatId, 
+                        new Telegram.Bot.Types.InputFiles.InputOnlineFile(screenshot), 
+                        caption: $"Расписание занятий"
+                    ).Result;
                 }
                 catch (Exception ex)
                 {
@@ -203,27 +208,18 @@ namespace TelegramBot
                 }
             });
         }
-        public static async Task GetScrPromAAsync(Update update)
+        public async Task GetScreenshotExamTimeTableAsync(long chatId, string linkGroup)
         {
             await Task.Run(() =>
             {
                 try
                 {
-                    Guid guid = Guid.NewGuid();
-                    var screenshotJob2 = ScreenshotJobBuilder.Create(ExamTimeTableParser.linkGroupPromA).SetBrowserSize(1100, 900).SetCaptureZone(CaptureZone.FullPage).SetTrigger(new WindowLoadTrigger());
-                    System.IO.File.WriteAllBytes($"{guid}PromA.png", screenshotJob2.Freeze());
-                    string[] findFiles = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, $"{guid}PromA.png", SearchOption.AllDirectories);
-                    foreach (string file in findFiles)
-                    {
-                        var q = file;
-                        using (var str2 = System.IO.File.OpenRead(q))
-                        {
-                            var a = bot.SendPhotoAsync(update.Message.Chat.Id, new Telegram.Bot.Types.InputFiles.InputOnlineFile(str2), caption: $"Расписание промежуточной аттестации").Result;
-                            str2.Close();
-                            System.IO.File.Delete(q);
-                            break;
-                        }
-                    }
+                    FileStream screenshot = screenshotService.GetScreenshot(1100, 900, "examTimeTable", linkGroup);
+                    var a = bot.SendPhotoAsync(
+                        chatId,
+                        new Telegram.Bot.Types.InputFiles.InputOnlineFile(screenshot),
+                        caption: $"Расписание промежуточной аттестации"
+                    ).Result;
                 }
                 catch (Exception ex)
                 {
