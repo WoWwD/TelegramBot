@@ -1,4 +1,4 @@
-﻿using System;
+﻿using TelegramBot.All_Paths;
 using TelegramBot.NewsOfVuz;
 using TelegramBot.Parsers;
 using TelegramBot.Services;
@@ -16,10 +16,8 @@ namespace TelegramBot
             NewsParser newsParser = new NewsParser();
             Texts texts = new Texts();
             ScreenshotService screenshotService = new ScreenshotService();
-            string token = "1674698636:AAHjunKIirrDECO0xHe3f72UvbogU25T6AM";
 
-            Console.WriteLine("Бот в Telegram - @mmfrtbot");
-            Bot bot = new Bot(token, buttons, timeTableParser, examTimeTableParser, newsParser, texts, screenshotService); 
+            Bot bot = new Bot(Constants.botToken, buttons, timeTableParser, examTimeTableParser, newsParser, texts, screenshotService); 
             bot.GetUpdates();
         }
     }

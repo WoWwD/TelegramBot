@@ -2,6 +2,7 @@
 {
     class Constants
     {
+        public const string botToken = "";
         public const string mainUrl = "http://www.penzgtu.ru/";
         public const string mainUrlEvents = "http://www.penzgtu.ru";
         public const string instagramUrl = "https://www.instagram.com/penzgtu/";

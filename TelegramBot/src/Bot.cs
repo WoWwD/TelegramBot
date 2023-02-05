@@ -75,12 +75,10 @@ namespace TelegramBot
             {
                 if (update.Message == null) return;
                 var message = update.Message.Text;
-                string firstName = update.Message.Chat.FirstName;
                 long chatId = update.Message.Chat.Id;
                 switch (update.Type)
                 {
                     case UpdateType.Message:
-                        Console.WriteLine($"{DateTime.Now}:  {firstName}  {chatId}  Message: {message}");
                         if (message.Contains("/start"))
                         {
                             await bot.SendTextMessageAsync(
